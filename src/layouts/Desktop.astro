@@ -1,8 +1,12 @@
 ---
 import 'xp.css';
 import '../styles/desktop.css';
+import MarkdownIt from 'markdown-it';
 import { db } from '../lib/db';
 import { SITE_TITLE } from '../lib/site';
+
+// html stays off (default): raw HTML in the bio markdown is escaped
+const md = new MarkdownIt({ linkify: true });
 
 interface Props {
   title?: string;
@@ -14,7 +18,25 @@ type Link = { id: number; label: string; icon_filename: string | null; kind: str
 const links = db
   .prepare('SELECT id, label, icon_filename, kind, url FROM links WHERE visible = 1 ORDER BY sort_order, id')
   .all() as Link[];
-const iconSrc = (l: Link) => (l.icon_filename ? `/uploads/${l.icon_filename}` : '/favicon.svg');
+const iconSrc = (l: Link) =>
+  l.icon_filename
+    ? `/uploads/${l.icon_filename}`
+    : l.kind === 'window'
+      ? '/icons/generic-text-document.png' // uploaded documents
+      : '/favicon.svg';
+
+// start-menu bio; personal text/photo live in the settings table, never in code
+const settings = Object.fromEntries(
+  (
+    db.prepare("SELECT key, value FROM settings WHERE key IN ('about', 'bio_name', 'bio_photo')").all() as {
+      key: string;
+      value: string;
+    }[]
+  ).map((r) => [r.key, r.value])
+);
+const bioName = settings.bio_name || SITE_TITLE;
+const bioPhoto = settings.bio_photo ? `/uploads/${settings.bio_photo}` : '/favicon.svg';
+const bioHtml = md.render(settings.about ?? '');
 ---
 
 <html lang="en">
@@ -44,9 +66,9 @@ const iconSrc = (l: Link) => (l.icon_filename ? `/uploads/${l.icon_filename}` : 
         )}
         {/* shown to everyone: the desktop page is edge-cached, so its HTML must
             not vary by session. Clicking it just lands on the /admin login. */}
-        <a class="icon" href="/admin">
-          <span class="icon-img"><img src="/favicon.svg" alt="" width="48" height="48" /></span>
-          <span>Administrator</span>
+        <a class="icon control-panel" href="/admin">
+          <span class="icon-img"><img src="/icons/control-panel.png" alt="" width="48" height="48" /></span>
+          <span>Control Panel</span>
         </a>
       </div>
 
@@ -67,10 +89,33 @@ const iconSrc = (l: Link) => (l.icon_filename ? `/uploads/${l.icon_filename}` : 
       <slot />
     </main>
     <footer class="taskbar">
-      <button class="start-button">About</button>
+      <button class="start-button" popovertarget="start-menu">Start</button>
+      <time class="tray-clock"></time>
     </footer>
 
+    {/* popover: top layer + click-outside/Esc dismissal, no JS needed */}
+    <div id="start-menu" class="start-menu" popover>
+      <header>
+        <img src={bioPhoto} alt="" width="56" height="56" />
+        <span>{bioName}</span>
+      </header>
+      <div class="start-menu-body" set:html={bioHtml} />
+      <footer>
+        <button popovertarget="start-menu" popovertargetaction="hide">
+          <img src="/icons/power.png" alt="" width="24" height="24" /> Turn Off Computer
+        </button>
+      </footer>
+    </div>
+
     <script>
+      // tray clock: the client's local time, so it's rendered here, not SSR'd
+      const clock = document.querySelector<HTMLElement>('.tray-clock')!;
+      const tick = () => {
+        clock.textContent = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+      };
+      tick();
+      setInterval(tick, 1000);
+
       document.querySelectorAll<HTMLElement>('[data-open]').forEach((btn) => {
         btn.addEventListener('click', () => {
           const win = document.getElementById(btn.dataset.open!)!;

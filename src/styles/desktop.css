@@ -23,6 +23,7 @@ body {
 }
 
 .icon {
+  box-sizing: border-box; /* buttons are border-box by default, anchors aren't */
   width: 104px;
   display: flex;
   flex-direction: column;
@@ -47,21 +48,30 @@ body {
   height: 48px;
 }
 
-/* external-link badge, bottom-right of the icon image */
+/* anchors don't get xp.css's button hover glow; mirror it so external-link
+   icons light up like the window-button icons do */
+a.icon:hover {
+  box-shadow:
+    inset -1px 1px #fff0cf,
+    inset 1px 2px #fdd889,
+    inset -2px 2px #fbc761,
+    inset 2px -2px #e5a01a;
+}
+
+/* Control Panel sits alone in the bottom-right corner, Recycle Bin style */
+.icon.control-panel {
+  position: fixed;
+  right: 12px;
+  bottom: 56px; /* clears the 44px taskbar plus the grid's 12px gutter */
+}
+
+/* shortcut-arrow overlay composited over external-link icons; the png is a
+   full-canvas overlay with the arrow box in its bottom-left corner */
 .external .icon-img::after {
-  content: '↗';
+  content: '';
   position: absolute;
-  right: -6px;
-  bottom: -4px;
-  width: 16px;
-  height: 16px;
-  background: #fff;
-  border: 1px solid #808080;
-  border-radius: 2px;
-  color: #1941a5;
-  font: bold 12px/16px 'Pixelated MS Sans Serif', sans-serif;
-  text-align: center;
-  text-shadow: none;
+  inset: 0;
+  background: url('/icons/shortcut-overlay.png') center / contain no-repeat;
 }
 
 .pdf-window {
@@ -166,10 +176,133 @@ dialog.window::backdrop {
   background: linear-gradient(#245edb, #1941a5);
 }
 
+/* the XP green Start button: flush left, rounded right, glossy gradient */
 .taskbar .start-button {
-  height: 34px;
-  margin-left: 4px;
-  padding: 0 20px;
-  font-size: 15px;
+  height: 100%;
+  margin: 0;
+  padding: 0 26px 0 16px;
+  border: 0;
+  border-radius: 0 12px 12px 0;
+  background: linear-gradient(#63b45e, #3d8f3d 12%, #2f7d2f 55%, #266722);
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.5),
+    inset -8px 0 8px -8px rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 18px;
+  font-style: italic;
   font-weight: bold;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);
+  cursor: pointer;
+}
+
+.taskbar .start-button:hover {
+  filter: brightness(1.1);
+}
+
+.taskbar .start-button:active {
+  filter: brightness(0.92);
+}
+
+/* system-tray clock: the lighter blue panel at the taskbar's right end */
+.taskbar .tray-clock {
+  margin-left: auto;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding: 0 14px 0 20px;
+  background: linear-gradient(#1c9bf1, #1173d3 10%, #0f61c4 55%, #0a52ab);
+  border-left: 1px solid #0a4d94;
+  box-shadow: inset 2px 1px 2px rgba(255, 255, 255, 0.35);
+  color: #fff;
+  font-size: 13px;
+  text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.4);
+}
+
+/* XP start-menu panel: blue frame, photo banner, white markdown body,
+   Turn Off strip. The blue frame shows through as thin side edges. */
+.start-menu {
+  position: fixed;
+  inset: auto auto 44px 0;
+  margin: 0;
+  width: min(560px, 94vw);
+  height: min(85vh, 820px);
+  /* display only via :popover-open — an unconditional `display` here would
+     override the UA's display:none for closed popovers and stick it open */
+  flex-direction: column;
+  padding: 0 3px;
+  border: 1px solid #0831d9;
+  border-radius: 8px 8px 0 0;
+  background: linear-gradient(#2470d8, #1053bd 12%, #0846a8 88%, #073a8c);
+  overflow: hidden;
+  box-shadow: 3px -3px 10px rgba(0, 0, 0, 0.4);
+}
+
+.start-menu:popover-open {
+  display: flex;
+}
+
+.start-menu header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  color: #fff;
+  font-size: 20px;
+  font-weight: bold;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.start-menu header img {
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  border-radius: 4px;
+  background: #fff;
+}
+
+.start-menu-body {
+  flex: 1;
+  overflow: auto;
+  padding: 16px 20px;
+  background: #fff;
+  border-top: 2px solid #e68b2c; /* the classic orange divider */
+}
+
+.start-menu footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 8px 12px;
+}
+
+.start-menu footer button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.start-menu footer button:hover {
+  text-decoration: underline;
+}
+
+/* confirm dialog: alert icon beside the message, roomy body, wide buttons */
+.confirm-body {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 8px 20px;
+}
+
+.confirm-body p {
+  margin: 0;
+}
+
+dialog.window .field-row button {
+  min-width: 72px;
 }

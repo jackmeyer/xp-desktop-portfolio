@@ -4,6 +4,7 @@ import { extname, join } from 'node:path';
 
 const types: Record<string, string> = {
   '.png': 'image/png',
+  '.jpg': 'image/jpeg',
   '.pdf': 'application/pdf',
 };
 

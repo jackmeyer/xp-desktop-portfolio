@@ -76,7 +76,10 @@ const saved = Astro.url.searchParams.get('saved') === '1';
       </div>
     </div>
     <div class="window-body" style="overflow: auto">
-        <p><a href="/admin?tab=posts">← Back to posts</a></p>
+        <form method="get" action="/admin" style="margin-bottom: 12px">
+          <input type="hidden" name="tab" value="posts" />
+          <button type="submit">← Back to posts</button>
+        </form>
         {saved && <p role="status">Saved.</p>}
         <form method="post">
           {id && <input type="hidden" name="id" value={id} />}

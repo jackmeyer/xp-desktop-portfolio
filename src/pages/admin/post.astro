@@ -1,6 +1,6 @@
 ---
-import 'xp.css';
 import MarkdownIt from 'markdown-it';
+import Desktop from '../../layouts/Desktop.astro';
 import { db } from '../../lib/db';
 
 // html stays off (default): raw HTML in markdown is escaped, so the rendered
@@ -64,18 +64,18 @@ const post = id ? (db.prepare('SELECT * FROM posts WHERE id = ?').get(id) as Pos
 const saved = Astro.url.searchParams.get('saved') === '1';
 ---
 
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{post ? `Edit: ${post.title}` : 'New post'}</title>
-  </head>
-  <body style="background: #3a6ea5; margin: 0; padding: 16px">
-    <div class="window" style="width: min(900px, 96vw); margin: 0 auto">
-      <div class="title-bar">
-        <div class="title-bar-text">{post?.title || 'Untitled'}.md — Notepad</div>
+<Desktop title={post ? `Edit: ${post.title}` : 'New post'}>
+  <div class="window admin-window" role="dialog" aria-label="Post editor" style="width: min(900px, 95vw)">
+    <div class="title-bar">
+      <div class="title-bar-text">{post?.title || 'Untitled'}.md — Notepad</div>
+      <div class="title-bar-controls">
+        <form method="get" action="/admin">
+          <input type="hidden" name="tab" value="posts" />
+          <button aria-label="Close"></button>
+        </form>
       </div>
-      <div class="window-body">
+    </div>
+    <div class="window-body" style="overflow: auto">
         <p><a href="/admin?tab=posts">← Back to posts</a></p>
         {saved && <p role="status">Saved.</p>}
         <form method="post">
@@ -109,7 +109,6 @@ const saved = Astro.url.searchParams.get('saved') === '1';
             <div style="background: #fff; padding: 12px" set:html={post.body_html} />
           </fieldset>
         )}
-      </div>
     </div>
-  </body>
-</html>
+  </div>
+</Desktop>

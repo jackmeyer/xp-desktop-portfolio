@@ -1,5 +1,5 @@
 ---
-import 'xp.css';
+import Desktop from '../../layouts/Desktop.astro';
 import { createSession, rateLimited, verifyLogin } from '../../lib/auth';
 import { SITE_TITLE } from '../../lib/site';
 
@@ -30,33 +30,29 @@ if (Astro.request.method === 'POST') {
 }
 ---
 
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Log On</title>
-  </head>
-  <body style="display: grid; place-items: center; min-height: 100vh; background: #3a6ea5; margin: 0">
-    <div class="window" style="width: min(320px, 90vw)">
-      <div class="title-bar">
-        <div class="title-bar-text">Log On to {SITE_TITLE}</div>
-      </div>
-      <div class="window-body">
-        <form method="post">
-          <div class="field-row-stacked">
-            <label for="email">Email</label>
-            <input id="email" name="email" type="email" required autocomplete="username" />
-          </div>
-          <div class="field-row-stacked">
-            <label for="password">Password</label>
-            <input id="password" name="password" type="password" required autocomplete="current-password" />
-          </div>
-          {error && <p role="alert">{error}</p>}
-          <section class="field-row" style="justify-content: flex-end">
-            <button type="submit">OK</button>
-          </section>
-        </form>
+<Desktop title="Log On">
+  <div class="window admin-window" role="dialog" aria-label="Log On" style="width: min(320px, 90vw)">
+    <div class="title-bar">
+      <div class="title-bar-text">Log On to {SITE_TITLE}</div>
+      <div class="title-bar-controls">
+        <form method="get" action="/"><button aria-label="Close"></button></form>
       </div>
     </div>
-  </body>
-</html>
+    <div class="window-body">
+      <form method="post">
+        <div class="field-row-stacked">
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" required autocomplete="username" />
+        </div>
+        <div class="field-row-stacked">
+          <label for="password">Password</label>
+          <input id="password" name="password" type="password" required autocomplete="current-password" />
+        </div>
+        {error && <p role="alert">{error}</p>}
+        <section class="field-row" style="justify-content: flex-end">
+          <button type="submit">OK</button>
+        </section>
+      </form>
+    </div>
+  </div>
+</Desktop>

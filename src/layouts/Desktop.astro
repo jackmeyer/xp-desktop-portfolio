@@ -42,6 +42,12 @@ const iconSrc = (l: Link) => (l.icon_filename ? `/uploads/${l.icon_filename}` : 
             </button>
           )
         )}
+        {/* shown to everyone: the desktop page is edge-cached, so its HTML must
+            not vary by session. Clicking it just lands on the /admin login. */}
+        <a class="icon" href="/admin">
+          <span class="icon-img"><img src="/favicon.svg" alt="" width="48" height="48" /></span>
+          <span>Administrator</span>
+        </a>
       </div>
 
       {links
@@ -82,7 +88,8 @@ const iconSrc = (l: Link) => (l.icon_filename ? `/uploads/${l.icon_filename}` : 
       // drag (title bar, delegated from the window so content swaps survive)
       // + click-to-front; resize is native CSS `resize: both`
       let z = 10;
-      document.querySelectorAll<HTMLElement>('.desktop .window').forEach((win) => {
+      // dialogs live in the top layer and center via margins; leave them alone
+      document.querySelectorAll<HTMLElement>('.desktop .window:not(dialog)').forEach((win) => {
         win.addEventListener('pointerdown', (e) => {
           win.style.zIndex = String(++z);
           const target = e.target as HTMLElement;

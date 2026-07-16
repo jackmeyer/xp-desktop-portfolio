@@ -1,8 +1,9 @@
 ---
-import 'xp.css';
 import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import Desktop from '../../layouts/Desktop.astro';
+import { createUser } from '../../lib/auth';
 import { db } from '../../lib/db';
 
 type Link = {
@@ -40,6 +41,28 @@ if (Astro.request.method === 'POST') {
   if (action === 'post-unpublish') {
     db.prepare("UPDATE posts SET status = 'draft' WHERE id = ?").run(Number(form.get('id')));
     return Astro.redirect('/admin?tab=posts');
+  }
+  if (action === 'user-delete') {
+    // sessions cascade with the user, so a deleted account is signed out everywhere.
+    // The self-check is the real guard; the hidden UI button is just courtesy.
+    const id = Number(form.get('id'));
+    if (id !== user.id) db.prepare('DELETE FROM users WHERE id = ?').run(id);
+    return Astro.redirect('/admin?tab=users');
+  }
+  if (action === 'user-create') {
+    // errors travel as a code in the redirect URL (PRG), never the credentials
+    const email = String(form.get('email') ?? '').trim();
+    const password = String(form.get('password') ?? '');
+    let code = !/^\S+@\S+\.\S+$/.test(email) ? 'email' : password.length < 8 ? 'password' : null;
+    if (!code) {
+      try {
+        await createUser(email, password);
+        return Astro.redirect('/admin?tab=users');
+      } catch (e) {
+        code = e instanceof Error && e.message.includes('UNIQUE') ? 'exists' : 'failed';
+      }
+    }
+    return Astro.redirect(`/admin?tab=users&user-error=${code}`);
   }
 
   const id = Number(form.get('id')) || null;
@@ -145,6 +168,15 @@ const posts = db
   .prepare('SELECT id, title, slug, status, published_at, updated_at FROM posts ORDER BY updated_at DESC')
   .all() as Post[];
 
+type UserRow = { id: number; email: string; created_at: string };
+const users = db.prepare('SELECT id, email, created_at FROM users ORDER BY id').all() as UserRow[];
+const userError = {
+  email: 'Enter a valid email address.',
+  password: 'Password must be at least 8 characters.',
+  exists: 'A user with that email already exists.',
+  failed: 'Could not create user.',
+}[Astro.url.searchParams.get('user-error') ?? ''];
+
 const editId = Number(Astro.url.searchParams.get('edit')) || null;
 const editing = editId
   ? (db.prepare('SELECT * FROM links WHERE id = ?').get(editId) as Link | undefined)
@@ -152,21 +184,15 @@ const editing = editId
 const links = db.prepare('SELECT * FROM links ORDER BY sort_order, id').all() as Link[];
 ---
 
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Admin</title>
-  </head>
-  <body style="background: #3a6ea5; margin: 0; padding: 16px">
-    <div
-      class="window"
-      style="width: min(1200px, 96vw); margin: 0 auto; min-height: calc(95vh - 32px); display: flex; flex-direction: column"
-    >
-      <div class="title-bar">
-        <div class="title-bar-text">Administrator</div>
+<Desktop title="Administrator">
+  <div class="window admin-window" role="dialog" aria-label="Administrator" style="width: min(1100px, 95vw)">
+    <div class="title-bar">
+      <div class="title-bar-text">Administrator</div>
+      <div class="title-bar-controls">
+        <form method="get" action="/"><button aria-label="Close"></button></form>
       </div>
-      <div class="window-body" style="flex: 1; display: flex; flex-direction: column">
+    </div>
+    <div class="window-body" style="flex: 1; display: flex; flex-direction: column; overflow: auto">
         <menu role="tablist">
           <button aria-selected={tab === 'tab-icons'} aria-controls="tab-icons">Desktop Icons</button>
           <button aria-selected={tab === 'tab-posts'} aria-controls="tab-posts">Posts</button>
@@ -188,7 +214,7 @@ const links = db.prepare('SELECT * FROM links ORDER BY sort_order, id').all() as
                     <td style="word-break: break-all">{l.url} {l.kind === 'window' && <em>(PDF viewer)</em>}</td>
                     <td style="white-space: nowrap">
                       <a href={`/admin?edit=${l.id}`}>Edit</a>
-                      <form method="post" style="display: inline" onsubmit="return confirm('Delete this icon?')">
+                      <form method="post" style="display: inline" data-confirm="Delete this icon?">
                         <input type="hidden" name="action" value="delete" />
                         <input type="hidden" name="id" value={l.id} />
                         <button type="submit">Delete</button>
@@ -260,7 +286,7 @@ const links = db.prepare('SELECT * FROM links ORDER BY sort_order, id').all() as
                         <input type="hidden" name="id" value={p.id} />
                         <button type="submit">{p.status === 'published' ? 'Unpublish' : 'Publish'}</button>
                       </form>
-                      <form method="post" style="display: inline" onsubmit="return confirm('Delete this post permanently?')">
+                      <form method="post" style="display: inline" data-confirm="Delete this post permanently?">
                         <input type="hidden" name="action" value="post-delete" />
                         <input type="hidden" name="id" value={p.id} />
                         <button type="submit">Delete</button>
@@ -274,7 +300,49 @@ const links = db.prepare('SELECT * FROM links ORDER BY sort_order, id').all() as
         </article>
 
         <article role="tabpanel" id="tab-users" hidden={tab !== 'tab-users'}>
-          <p>User management lands here next.</p>
+          <table style="width: 100%; margin-bottom: 12px">
+            <thead>
+              <tr><th style="text-align: left">Email</th><th style="text-align: left">Created</th><th></th></tr>
+            </thead>
+            <tbody>
+              {users.map((u) => (
+                <tr>
+                  <td>{u.email}{u.id === user.id && ' (you)'}</td>
+                  <td>{u.created_at.slice(0, 10)}</td>
+                  <td style="white-space: nowrap">
+                    {u.id !== user.id && (
+                      <form method="post" action="/admin?tab=users" style="display: inline" data-confirm="Delete this user? They will be signed out everywhere.">
+                        <input type="hidden" name="action" value="user-delete" />
+                        <input type="hidden" name="id" value={u.id} />
+                        <button type="submit">Delete</button>
+                      </form>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <fieldset>
+            <legend>New user</legend>
+            {/* explicit action: tabs switch client-side without touching the URL,
+                so posting to the current URL could land the error on another tab */}
+            <form method="post" action="/admin?tab=users">
+              <input type="hidden" name="action" value="user-create" />
+              <div class="field-row-stacked">
+                <label for="user-email">Email</label>
+                <input id="user-email" name="email" type="email" required />
+              </div>
+              <div class="field-row-stacked">
+                <label for="user-password">Password (at least 8 characters)</label>
+                <input id="user-password" name="password" type="password" required minlength="8" autocomplete="new-password" />
+              </div>
+              {userError && <p role="alert">{userError}</p>}
+              <div class="field-row" style="justify-content: flex-end">
+                <button type="submit">Create</button>
+              </div>
+            </form>
+          </fieldset>
         </article>
 
         <div class="field-row" style="justify-content: space-between; margin-top: auto; padding-top: 12px">
@@ -283,20 +351,55 @@ const links = db.prepare('SELECT * FROM links ORDER BY sort_order, id').all() as
             <button type="submit">Log Off</button>
           </form>
         </div>
+    </div>
+  </div>
+
+  <dialog id="confirm-dialog" class="window" aria-labelledby="confirm-message">
+    <div class="title-bar">
+      <div class="title-bar-text">Confirm Delete</div>
+      <div class="title-bar-controls">
+        <form method="dialog"><button aria-label="Close"></button></form>
       </div>
     </div>
+    <div class="window-body">
+      <p id="confirm-message" style="margin-top: 0"></p>
+      <form method="dialog" class="field-row" style="justify-content: flex-end">
+        <button value="ok" autofocus>Yes</button>
+        <button value="">No</button>
+      </form>
+    </div>
+  </dialog>
 
-    <script>
-      document.querySelectorAll('menu[role=tablist] button').forEach((tab) => {
-        tab.addEventListener('click', () => {
-          document.querySelectorAll('menu[role=tablist] button').forEach((t) => {
-            t.setAttribute('aria-selected', String(t === tab));
-          });
-          document.querySelectorAll<HTMLElement>('[role=tabpanel]').forEach((p) => {
-            p.hidden = p.id !== tab.getAttribute('aria-controls');
-          });
+  <script>
+    // forms marked data-confirm submit only after an OK from the XP dialog;
+    // form.submit() bypasses the submit listener, so no re-prompt loop
+    const dialog = document.getElementById('confirm-dialog') as HTMLDialogElement;
+    const message = document.getElementById('confirm-message')!;
+    let pending: HTMLFormElement | null = null;
+    document.querySelectorAll<HTMLFormElement>('form[data-confirm]').forEach((form) => {
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        pending = form;
+        message.textContent = form.dataset.confirm!;
+        dialog.showModal();
+      });
+    });
+    dialog.addEventListener('close', () => {
+      const form = pending;
+      pending = null;
+      if (dialog.returnValue === 'ok') form?.submit();
+      dialog.returnValue = ''; // Esc keeps the previous value; don't let an old 'ok' linger
+    });
+
+    document.querySelectorAll('menu[role=tablist] button').forEach((tab) => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('menu[role=tablist] button').forEach((t) => {
+          t.setAttribute('aria-selected', String(t === tab));
+        });
+        document.querySelectorAll<HTMLElement>('[role=tabpanel]').forEach((p) => {
+          p.hidden = p.id !== tab.getAttribute('aria-controls');
         });
       });
-    </script>
-  </body>
-</html>
+    });
+  </script>
+</Desktop>

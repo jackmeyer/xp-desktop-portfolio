@@ -10,12 +10,14 @@ if (!db.prepare('SELECT 1 FROM users LIMIT 1').get()) {
   // process.env in the container (env_file); import.meta.env under astro dev (.env)
   const email = process.env.ADMIN_EMAIL ?? import.meta.env.ADMIN_EMAIL;
   const password = process.env.ADMIN_PASSWORD ?? import.meta.env.ADMIN_PASSWORD;
-  if (email && password) {
-    db.prepare('INSERT INTO users (email, password_hash) VALUES (?, ?)').run(
-      email,
-      await argon2.hash(password, { type: argon2.argon2id })
-    );
-  }
+  if (email && password) await createUser(email, password);
+}
+
+export async function createUser(email: string, password: string): Promise<void> {
+  db.prepare('INSERT INTO users (email, password_hash) VALUES (?, ?)').run(
+    email,
+    await argon2.hash(password, { type: argon2.argon2id })
+  );
 }
 
 // ponytail: in-memory per-IP rate limit, resets on restart; move to the

@@ -94,14 +94,31 @@ body {
   min-height: 140px;
 }
 
+/* XP-style modal confirm: xp.css supplies the window chrome, the browser the
+   modality (top layer, backdrop, Esc-to-cancel) */
+.desktop dialog.window {
+  border: 0;
+  padding: 0;
+  min-height: 0;
+  resize: none;
+}
+
+dialog.window::backdrop {
+  background: rgba(0, 0, 0, 0.3);
+}
+
 .desktop .title-bar {
   touch-action: none; /* pointer-drag instead of scroll gestures */
   user-select: none;
   cursor: default;
 }
 
-/* server-rendered content window (Lab Notes index + posts) */
-.content-window {
+/* server-rendered content window (Lab Notes index + posts).
+   .admin-window shares the geometry but NOT the class: the layout's swap
+   script owns .content-window submits/links, and admin forms must POST for
+   real. Each admin page sets its own width inline. */
+.content-window,
+.admin-window {
   position: fixed;
   top: 50%;
   left: 50%;

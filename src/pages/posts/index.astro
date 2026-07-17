@@ -11,10 +11,10 @@ const posts = db
   .all() as Post[];
 ---
 
-<Desktop title={`Lab Notes — ${SITE_TITLE}`} description="Lab notes and write-ups">
-  <div class="window content-window" role="dialog" aria-label="Lab Notes">
+<Desktop title={`Posts — ${SITE_TITLE}`} description="Posts and write-ups" windowLabel="Posts">
+  <Fragment slot="posts-window">
     <div class="title-bar">
-      <div class="title-bar-text">Lab Notes</div>
+      <div class="title-bar-text">Posts</div>
       <div class="title-bar-controls">
         <form method="get" action="/"><button aria-label="Close"></button></form>
       </div>
@@ -31,5 +31,5 @@ const posts = db
         ))}
       </ul>
     </div>
-  </div>
+  </Fragment>
 </Desktop>

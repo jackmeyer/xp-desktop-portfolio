@@ -123,7 +123,7 @@ dialog.window::backdrop {
   cursor: default;
 }
 
-/* server-rendered content window (Lab Notes index + posts).
+/* server-rendered content window (Posts index + posts).
    .admin-window shares the geometry but NOT the class: the layout's swap
    script owns .content-window submits/links, and admin forms must POST for
    real. Each admin page sets its own width inline. */
@@ -139,6 +139,13 @@ dialog.window::backdrop {
   max-height: 85vh;
   display: flex;
   flex-direction: column;
+}
+
+/* like .pdf-window[hidden]: the flex display above would otherwise override
+   the UA's display:none for [hidden] and keep closed windows painted */
+.content-window[hidden],
+.admin-window[hidden] {
+  display: none;
 }
 
 .content-window .content-body {
@@ -203,6 +210,70 @@ dialog.window::backdrop {
   filter: brightness(0.92);
 }
 
+/* open-window buttons: raised blue, pressed-dark when focused */
+.taskbar .task-buttons {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0 6px;
+  overflow: hidden;
+}
+
+.taskbar .task-button {
+  flex: 0 1 170px;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 3px;
+  background: linear-gradient(#4790f0, #2569d8 10%, #1e5bc8 55%, #1548a8);
+  box-shadow:
+    inset 1px 1px rgba(255, 255, 255, 0.4),
+    1px 1px 1px rgba(0, 0, 0, 0.3);
+  color: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+}
+
+.taskbar .task-button[hidden] {
+  display: none;
+}
+
+/* re-assert our shadow on hover: xp.css's button:hover orange glow otherwise wins */
+.taskbar .task-button:hover {
+  box-shadow:
+    inset 1px 1px rgba(255, 255, 255, 0.4),
+    1px 1px 1px rgba(0, 0, 0, 0.3);
+  filter: brightness(1.12);
+}
+
+.taskbar .task-button.active,
+.taskbar .task-button.active:hover {
+  background: linear-gradient(#104192, #16509e 8%, #1a55aa 92%, #2266c4);
+  box-shadow: inset 1px 1px 3px rgba(0, 0, 0, 0.5);
+  filter: none;
+}
+
+.taskbar .task-button img {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+
+.taskbar .task-button span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
 /* system-tray clock: the lighter blue panel at the taskbar's right end */
 .taskbar .tray-clock {
   margin-left: auto;
@@ -248,7 +319,6 @@ dialog.window::backdrop {
   padding: 10px 12px;
   color: #fff;
   font-size: 20px;
-  font-weight: bold;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
 }
 
@@ -283,7 +353,9 @@ dialog.window::backdrop {
   background: none;
   box-shadow: none;
   color: #fff;
+  font-family: inherit; /* the clock's font (body Arial), not xp.css's pixel font */
   font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
 }
 

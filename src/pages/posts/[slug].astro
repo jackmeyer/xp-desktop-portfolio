@@ -13,7 +13,7 @@ const post = db
 if (!post) return new Response('Not found', { status: 404 });
 ---
 
-<Desktop title={`${post.title} — ${SITE_TITLE}`} description={post.summary}>
+<Desktop title={`${post.title} — ${SITE_TITLE}`} description={post.summary} windowLabel={post.title}>
   <Fragment slot="head">
     <meta property="og:title" content={post.title} />
     {post.summary && <meta property="og:description" content={post.summary} />}
@@ -21,9 +21,9 @@ if (!post) return new Response('Not found', { status: 404 });
     <meta property="article:published_time" content={post.published_at} />
   </Fragment>
 
-  <div class="window content-window" role="dialog" aria-label={post.title}>
+  <Fragment slot="posts-window">
     <div class="title-bar">
-      <div class="title-bar-text">{post.title} — Lab Notes</div>
+      <div class="title-bar-text">{post.title} — Posts</div>
       <div class="title-bar-controls">
         <form method="get" action="/"><button aria-label="Close"></button></form>
       </div>
@@ -36,5 +36,5 @@ if (!post) return new Response('Not found', { status: 404 });
         <div set:html={post.body_html} />
       </article>
     </div>
-  </div>
+  </Fragment>
 </Desktop>

@@ -11,8 +11,9 @@ const md = new MarkdownIt({ linkify: true });
 interface Props {
   title?: string;
   description?: string;
+  windowLabel?: string;
 }
-const { title = SITE_TITLE, description } = Astro.props;
+const { title = SITE_TITLE, description, windowLabel = 'Posts' } = Astro.props;
 
 type Link = { id: number; label: string; icon_filename: string | null; kind: string; url: string };
 const links = db
@@ -51,6 +52,10 @@ const bioHtml = md.render(settings.about ?? '');
   <body data-site-title={SITE_TITLE}>
     <main class="desktop">
       <div class="icons">
+        <a class="icon" href="/posts">
+          <span class="icon-img"><img src="/icons/generic-text-document.png" alt="" width="48" height="48" /></span>
+          <span>Posts</span>
+        </a>
         {links.map((l) =>
           l.kind === 'external' ? (
             <a class="icon external" href={l.url} target="_blank" rel="noopener">
@@ -75,7 +80,7 @@ const bioHtml = md.render(settings.about ?? '');
       {links
         .filter((l) => l.kind === 'window')
         .map((l) => (
-          <div class="window pdf-window" id={`window-${l.id}`} role="dialog" aria-label={l.label} hidden>
+          <div class="window pdf-window" id={`window-${l.id}`} role="dialog" aria-label={l.label} data-taskbar-icon={iconSrc(l)} hidden>
             <div class="title-bar">
               <div class="title-bar-text">{l.label}</div>
               <div class="title-bar-controls">
@@ -86,10 +91,23 @@ const bioHtml = md.render(settings.about ?? '');
           </div>
         ))}
 
+      {/* posts window: SSR-filled via the named slot on /posts URLs, filled by
+          the swap script when opened from the desktop — no page reload, so
+          other open windows survive */}
+      <div
+        class="window content-window"
+        role="dialog"
+        aria-label={windowLabel}
+        hidden={!Astro.slots.has('posts-window')}
+      >
+        <slot name="posts-window" />
+      </div>
+
       <slot />
     </main>
     <footer class="taskbar">
       <button class="start-button" popovertarget="start-menu">Start</button>
+      <div class="task-buttons"></div>
       <time class="tray-clock"></time>
     </footer>
 
@@ -116,12 +134,76 @@ const bioHtml = md.render(settings.about ?? '');
       tick();
       setInterval(tick, 1000);
 
+      // --- taskbar window buttons, XP semantics: every open window gets a
+      // button; click focuses, clicking the focused one minimizes, close
+      // removes it. "Minimized" is hidden + data-minimized (button stays).
+      const strip = document.querySelector<HTMLElement>('.task-buttons')!;
+      const wins = [...document.querySelectorAll<HTMLElement>('.desktop .window:not(dialog)')];
+      const taskButtons = new Map<HTMLElement, HTMLButtonElement>();
+      let z = 10;
+      let active: HTMLElement | null = null;
+
+      const sync = () => {
+        for (const [win, btn] of taskButtons) {
+          const closed = win.hidden && win.dataset.minimized === undefined;
+          // fresh open (not a minimize-restore, which never hides the button):
+          // XP appends newly opened windows to the right end of the strip
+          if (btn.hidden && !closed) strip.append(btn);
+          btn.hidden = closed;
+          btn.querySelector('span')!.textContent = win.querySelector('.title-bar-text')?.textContent ?? '';
+          btn.classList.toggle('active', active === win && !win.hidden);
+        }
+      };
+
+      const raise = (win: HTMLElement) => {
+        win.style.zIndex = String(++z);
+        active = win;
+        sync();
+      };
+
+      for (const win of wins) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'task-button';
+        const img = document.createElement('img');
+        img.alt = '';
+        img.src =
+          win.dataset.taskbarIcon ??
+          (win.classList.contains('admin-window') ? '/icons/control-panel.png' : '/icons/generic-text-document.png');
+        btn.append(img, document.createElement('span'));
+        btn.addEventListener('click', () => {
+          if (win.hidden) {
+            delete win.dataset.minimized;
+            win.hidden = false;
+            raise(win);
+          } else if (active === win) {
+            win.dataset.minimized = '';
+            win.hidden = true;
+          } else {
+            raise(win);
+          }
+        });
+        taskButtons.set(win, btn);
+        strip.append(btn);
+      }
+
+      // closes from any code path (X buttons, popstate, swaps) stay in sync
+      const winObserver = new MutationObserver(() => {
+        if (active?.hidden) active = null;
+        sync();
+      });
+      wins.forEach((w) => winObserver.observe(w, { attributeFilter: ['hidden'] }));
+      active = wins.filter((w) => !w.hidden).pop() ?? null;
+      sync();
+
       document.querySelectorAll<HTMLElement>('[data-open]').forEach((btn) => {
         btn.addEventListener('click', () => {
           const win = document.getElementById(btn.dataset.open!)!;
           const frame = win.querySelector('iframe')!;
           if (!frame.src) frame.src = frame.dataset.src!; // load the PDF on first open only
+          delete win.dataset.minimized;
           win.hidden = false;
+          raise(win);
         });
       });
       document.querySelectorAll<HTMLElement>('[data-close]').forEach((btn) => {
@@ -132,11 +214,10 @@ const bioHtml = md.render(settings.about ?? '');
 
       // drag (title bar, delegated from the window so content swaps survive)
       // + click-to-front; resize is native CSS `resize: both`
-      let z = 10;
       // dialogs live in the top layer and center via margins; leave them alone
       document.querySelectorAll<HTMLElement>('.desktop .window:not(dialog)').forEach((win) => {
         win.addEventListener('pointerdown', (e) => {
-          win.style.zIndex = String(++z);
+          raise(win);
           const target = e.target as HTMLElement;
           if (!target.closest('.title-bar') || target.closest('button, a')) return;
           const rect = win.getBoundingClientRect();
@@ -180,14 +261,18 @@ const bioHtml = md.render(settings.about ?? '');
             cw.setAttribute('aria-label', next.getAttribute('aria-label') ?? '');
             cw.hidden = false;
             document.title = doc.title;
+            raise(cw); // focus it and refresh the taskbar (raise calls sync)
             if (push) history.pushState({}, '', href);
           } catch {
             location.href = href; // fall back to a real navigation
           }
         };
-        cw.addEventListener('click', (e) => {
+        // any same-origin /posts link — the desktop icon, links inside the
+        // window, the start-menu bio — opens in the window instead of navigating
+        document.addEventListener('click', (e) => {
+          if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return; // keep open-in-new-tab
           const a = (e.target as HTMLElement).closest('a');
-          if (!a || a.origin !== location.origin || !a.pathname.startsWith('/posts')) return;
+          if (!a || a.target || a.origin !== location.origin || !a.pathname.startsWith('/posts')) return;
           e.preventDefault();
           swap(a.href, true);
         });

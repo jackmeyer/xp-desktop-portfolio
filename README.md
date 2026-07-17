@@ -15,7 +15,7 @@ run it, and you get a blank desktop that's yours to fill.
 
 - 🪟 Windows XP look and feel ([XP.css](https://github.com/botoxparty/XP.css)) with draggable, resizable windows
 - 🔗 Desktop icons managed from the admin — external links (with favicon auto-fetch) or PDFs in a built-in viewer
-- 📝 A Markdown blog ("Lab Notes") with drafts, publishing, and clean URLs that update without page reloads
+- 📝 A Markdown blog ("Posts") with drafts, publishing, and clean URLs that update without page reloads
 - 🔍 Every page is real server-rendered HTML — search engines and link previews just work
 - 🔒 Simple, secure admin login (argon2 password hashing, rate limiting, session cookies)
 - 📦 One Docker container, one data folder to back up
@@ -56,7 +56,7 @@ From the admin you can:
   or an uploaded PDF (opens in the built-in viewer — great for a resume). You
   can upload your own `.png` icon, or let the favicon do the work.
 - **Posts** — write blog posts in Markdown. Save as draft, preview, then
-  publish. Published posts appear at `/posts` in a "Lab Notes" window on the
+  publish. Published posts appear at `/posts` in a "Posts" window on the
   desktop.
 
 ## Running from source (development)
@@ -114,6 +114,10 @@ instant because content is read at request time, never baked into a build.
 
 ## Credits
 
-Window and widget chrome via [XP.css](https://github.com/botoxparty/XP.css)
-(MIT). The design is an original homage to a certain beloved operating system —
-no Microsoft-copyrighted assets are used.
+Most XP styling - [XP.css](https://github.com/botoxparty/XP.css)
+(MIT). 
+
+Windows XP style icons sourced from the
+[Windows XP High Resolution Icon Pack](https://github.com/marchmountain/-Windows-XP-High-Resolution-Icon-Pack).
+
+The design is an homage to a certain beloved operating system.

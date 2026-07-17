@@ -1,5 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import argon2 from 'argon2';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 import { db } from './db';
 
 export type User = { id: number; email: string };
@@ -7,9 +9,8 @@ export type User = { id: number; email: string };
 // First-boot bootstrap: seed the admin from env when the users table is empty.
 // The variables can be removed after first boot; plaintext is never persisted.
 if (!db.prepare('SELECT 1 FROM users LIMIT 1').get()) {
-  // process.env in the container (env_file); import.meta.env under astro dev (.env)
-  const email = process.env.ADMIN_EMAIL ?? import.meta.env.ADMIN_EMAIL;
-  const password = process.env.ADMIN_PASSWORD ?? import.meta.env.ADMIN_PASSWORD;
+  const email = process.env.ADMIN_EMAIL;
+  const password = process.env.ADMIN_PASSWORD;
   if (email && password) await createUser(email, password);
 }
 
@@ -46,16 +47,6 @@ export async function verifyLogin(email: string, password: string): Promise<User
   return { id: row.id, email: row.email };
 }
 
-// browser cookie and db row must expire together; middleware re-sets the
-// cookie on authenticated requests so both windows slide in step
-export const sessionCookieOptions = {
-  httpOnly: true,
-  sameSite: 'strict',
-  secure: import.meta.env.PROD,
-  path: '/',
-  maxAge: 30 * 86400,
-} as const;
-
 // expired sessions are dead rows the queries always skip — sweep once per boot
 db.prepare("DELETE FROM sessions WHERE expires_at <= datetime('now')").run();
 
@@ -78,10 +69,20 @@ export function getSessionUser(token: string | undefined): User | null {
     .get(token) as User | undefined;
   if (!row) return null;
   // 30-day idle expiry: slide the window on every authenticated request
+  // (the middleware slides the browser cookie to match)
   db.prepare("UPDATE sessions SET expires_at = datetime('now', '+30 days') WHERE id = ?").run(token);
   return row;
 }
 
 export function destroySession(token: string): void {
   db.prepare('DELETE FROM sessions WHERE id = ?').run(token);
+}
+
+// The middleware only checks that a session cookie exists; pages and server
+// actions must call this for the real db-backed check. Server actions are
+// publicly reachable endpoints — never skip this there.
+export async function requireUser(): Promise<User> {
+  const user = getSessionUser((await cookies()).get('session')?.value);
+  if (!user) redirect('/admin/login');
+  return user;
 }

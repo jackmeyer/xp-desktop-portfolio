@@ -1,22 +1,26 @@
 ## Development
 
-When starting the dev server, use background mode:
+Start the dev server with:
 
 ```
-astro dev --background
+npm run dev
 ```
 
-Manage the background server with `astro dev stop`, `astro dev status`, and `astro dev logs`.
+It serves on http://localhost:4321. Dev and build both run with `--webpack`:
+Turbopack's CSS parser rejects a selector in xp.css 0.2.6, webpack's
+tolerates it.
+
+Type-check with `npm run check`.
 
 ## Documentation
 
-Full documentation: https://docs.astro.build
+Full documentation: https://nextjs.org/docs
 
 Consult these guides before working on related tasks:
 
-- [Adding pages, dynamic routes, or middleware](https://docs.astro.build/en/guides/routing/)
-- [Working with Astro components](https://docs.astro.build/en/basics/astro-components/)
-- [Using React, Vue, Svelte, or other framework components](https://docs.astro.build/en/guides/framework-components/)
-- [Adding or managing content](https://docs.astro.build/en/guides/content-collections/)
-- [Adding styles or using Tailwind](https://docs.astro.build/en/guides/styling/)
-- [Supporting multiple languages](https://docs.astro.build/en/guides/internationalization/)
+- [Routing, pages, and layouts (App Router)](https://nextjs.org/docs/app/building-your-application/routing)
+- [Server and Client Components](https://nextjs.org/docs/app/building-your-application/rendering)
+- [Server Actions and form handling](https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions-and-mutations)
+- [Route Handlers (API endpoints)](https://nextjs.org/docs/app/building-your-application/routing/route-handlers)
+- [Proxy (middleware)](https://nextjs.org/docs/app/api-reference/file-conventions/proxy)
+- [Styling](https://nextjs.org/docs/app/building-your-application/styling)

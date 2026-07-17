@@ -18,7 +18,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npx astro check
+      - run: npx tsc --noEmit
       # no `npm run build` here: the Docker build below runs it, so a broken
       # build still fails the workflow without building twice
       - uses: docker/login-action@v3

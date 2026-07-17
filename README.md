@@ -43,7 +43,8 @@ It will be empty! That's expected. Head to the admin to add things.
 
 ## Your first login
 
-1. Go to <http://localhost:4321/admin>
+1. Go to <http://localhost:4321> and double-click **Control Panel**
+   (bottom-right corner of the desktop)
 2. Sign in with the `ADMIN_EMAIL` / `ADMIN_PASSWORD` from your `.env`
 
 The admin account is created automatically on first boot. After that, the
@@ -74,9 +75,9 @@ Useful commands:
 | Command | What it does |
 | --- | --- |
 | `npm run dev` | Start the dev server with live reload |
-| `npm run build` | Production build into `./dist` |
-| `npm run preview` | Serve the production build locally |
-| `npx astro check` | Type-check the project |
+| `npm run build` | Production build into `./.next` |
+| `npm start` | Serve the production build locally |
+| `npm run check` | Type-check the project |
 
 ## Configuration
 
@@ -88,7 +89,7 @@ required after first boot except `DATA_DIR` defaults.
 | `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Your admin login, seeded on first boot only. (To reset it, delete the database and boot fresh.) |
 | `PUBLIC_SITE_TITLE` | The site name shown in the browser tab and window chrome (e.g. `yourdomain.com`). |
 | `PUBLIC_SITE_URL` | Your site's public URL, used for links and previews. |
-| `DATA_DIR` | Where the database and uploads live. Leave as `/data` for Docker. |
+| `DATA_DIR` | Where the database and uploads live. Leave unset: local runs use `./data`, Docker uses `/data`. |
 
 ## Where your stuff lives
 
@@ -106,11 +107,13 @@ file over time; see the note in `src/lib/db.ts`.)
 
 ## How it's built
 
-[Astro](https://astro.build) in server (SSR) mode on Node, rendering real HTML
-for every route from SQLite ([better-sqlite3](https://github.com/WiseLibs/better-sqlite3)).
-The desktop interactions (dragging, window swaps, history) are a small bit of
-vanilla JavaScript on top — no client framework in the hot path. Publishing is
-instant because content is read at request time, never baked into a build.
+[Next.js](https://nextjs.org) (App Router) with [React](https://react.dev),
+server-rendering real HTML for every route from SQLite
+([better-sqlite3](https://github.com/WiseLibs/better-sqlite3)). The desktop —
+draggable windows, taskbar, start menu — is a set of React client components;
+the admin is a window on that desktop (no `/admin` routes), talking to React
+Server Actions. Publishing is instant because
+content is read at request time, never baked into a build.
 
 ## Credits
 

@@ -1,0 +1,11 @@
+# keep secrets and local state out of the image build context — Next's
+# standalone output would otherwise ship .env inside the final image
+.env
+.env.*
+!.env.example
+node_modules
+.next
+data
+.git
+.github
+.claude

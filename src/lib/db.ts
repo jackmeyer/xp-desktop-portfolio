@@ -2,7 +2,7 @@ import Database from 'better-sqlite3';
 import { mkdirSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-const dataDir = process.env.DATA_DIR ?? 'data';
+const dataDir = process.env.DATA_DIR || 'data';
 mkdirSync(dataDir, { recursive: true });
 
 export const db = new Database(join(dataDir, 'site.db'));

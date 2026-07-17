@@ -1,14 +1,17 @@
 import { defineMiddleware } from 'astro:middleware';
-import { getSessionUser } from './lib/auth';
+import { getSessionUser, sessionCookieOptions } from './lib/auth';
 
 export const onRequest = defineMiddleware(async (context, next) => {
   const { pathname } = context.url;
 
   if (pathname.startsWith('/admin')) {
     // CSRF: SameSite=Strict cookie + Astro's built-in origin check on mutating requests
-    const user = getSessionUser(context.cookies.get('session')?.value);
+    const token = context.cookies.get('session')?.value;
+    const user = getSessionUser(token);
     if (user) {
       context.locals.user = user;
+      // getSessionUser just slid the db expiry; slide the cookie to match
+      context.cookies.set('session', token!, sessionCookieOptions);
     } else if (pathname !== '/admin/login') {
       return context.redirect('/admin/login');
     }

@@ -1,6 +1,6 @@
 ---
 import Desktop from '../../layouts/Desktop.astro';
-import { createSession, rateLimited, verifyLogin } from '../../lib/auth';
+import { createSession, rateLimited, recordFailedLogin, sessionCookieOptions, verifyLogin } from '../../lib/auth';
 import { SITE_TITLE } from '../../lib/site';
 
 if (Astro.locals.user) return Astro.redirect('/admin');
@@ -16,15 +16,10 @@ if (Astro.request.method === 'POST') {
       String(form.get('password') ?? '')
     );
     if (user) {
-      Astro.cookies.set('session', createSession(user.id), {
-        httpOnly: true,
-        sameSite: 'strict',
-        secure: import.meta.env.PROD,
-        path: '/',
-        maxAge: 30 * 86400,
-      });
+      Astro.cookies.set('session', createSession(user.id), sessionCookieOptions);
       return Astro.redirect('/admin');
     }
+    recordFailedLogin(Astro.clientAddress);
     error = 'Invalid email or password.';
   }
 }

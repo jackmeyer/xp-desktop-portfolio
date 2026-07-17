@@ -20,19 +20,22 @@ export async function createUser(email: string, password: string): Promise<void>
   );
 }
 
-// ponytail: in-memory per-IP rate limit, resets on restart; move to the
-// sessions db if this ever runs more than one instance.
-const attempts = new Map<string, { count: number; resetAt: number }>();
+// ponytail: in-memory per-IP failed-login limit, resets on restart; move to
+// the sessions db if this ever runs more than one instance.
+const failures = new Map<string, { count: number; resetAt: number }>();
 
 export function rateLimited(ip: string): boolean {
+  const f = failures.get(ip);
+  return !!f && Date.now() <= f.resetAt && f.count >= 5;
+}
+
+export function recordFailedLogin(ip: string): void {
   const now = Date.now();
-  const a = attempts.get(ip);
-  if (!a || now > a.resetAt) {
-    attempts.set(ip, { count: 1, resetAt: now + 15 * 60_000 });
-    return false;
-  }
-  a.count += 1;
-  return a.count > 5;
+  // sweep so spraying unique IPs can't grow the map without bound
+  if (failures.size > 1000) for (const [k, v] of failures) if (now > v.resetAt) failures.delete(k);
+  const f = failures.get(ip);
+  if (!f || now > f.resetAt) failures.set(ip, { count: 1, resetAt: now + 15 * 60_000 });
+  else f.count += 1;
 }
 
 export async function verifyLogin(email: string, password: string): Promise<User | null> {
@@ -42,6 +45,19 @@ export async function verifyLogin(email: string, password: string): Promise<User
   if (!row || !(await argon2.verify(row.password_hash, password))) return null;
   return { id: row.id, email: row.email };
 }
+
+// browser cookie and db row must expire together; middleware re-sets the
+// cookie on authenticated requests so both windows slide in step
+export const sessionCookieOptions = {
+  httpOnly: true,
+  sameSite: 'strict',
+  secure: import.meta.env.PROD,
+  path: '/',
+  maxAge: 30 * 86400,
+} as const;
+
+// expired sessions are dead rows the queries always skip — sweep once per boot
+db.prepare("DELETE FROM sessions WHERE expires_at <= datetime('now')").run();
 
 export function createSession(userId: number): string {
   const token = randomBytes(32).toString('base64url');

@@ -19,7 +19,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx astro check
-      - run: npm run build
+      # no `npm run build` here: the Docker build below runs it, so a broken
+      # build still fails the workflow without building twice
       - uses: docker/login-action@v3
         with:
           registry: ghcr.io

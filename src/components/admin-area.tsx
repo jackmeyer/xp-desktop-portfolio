@@ -246,7 +246,6 @@ function IconsPanel({
         <legend>{editing ? `Edit “${editing.label}”` : 'New icon'}</legend>
         <form
           key={editing?.id ?? 'new'}
-          encType="multipart/form-data"
           action={async (fd) => {
             const r = guard(await linkSave(fd));
             setError(r.error ?? '');
@@ -451,7 +450,6 @@ function BioPanel({
     <>
       <p>Shown in the Start menu on the desktop.</p>
       <form
-        encType="multipart/form-data"
         action={async (fd) => {
           const r = guard(await bioSave(fd));
           setError(r.error ?? '');

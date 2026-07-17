@@ -8,6 +8,7 @@ import { SITE_TITLE } from '../lib/site';
 import { WindowManagerProvider } from '../components/window-manager';
 import { PostsUIProvider } from '../components/posts-ui';
 import { IconGrid, type DesktopLink } from '../components/icon-grid';
+import { SelectionBox } from '../components/selection-box';
 import { PdfWindows } from '../components/pdf-windows';
 import { AdminArea } from '../components/admin-area';
 import { Taskbar } from '../components/taskbar';
@@ -52,6 +53,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <WindowManagerProvider>
           <PostsUIProvider>
             <main className="desktop">
+              <SelectionBox />
               <IconGrid links={links} />
               <PdfWindows links={links.filter((l) => l.kind === 'window')} />
               <AdminArea siteTitle={SITE_TITLE} />

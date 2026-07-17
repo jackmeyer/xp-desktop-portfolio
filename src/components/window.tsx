@@ -63,10 +63,12 @@ export function Window({
     const offsetY = e.clientY - rect.top;
     // pointer capture keeps the drag alive even over the PDF iframe
     el.setPointerCapture(e.pointerId);
+    let last: { left: number; top: number } | null = null;
     const move = (ev: globalThis.PointerEvent) => {
       const left = Math.max(48 - rect.width, Math.min(ev.clientX - offsetX, innerWidth - 48));
       const top = Math.max(0, Math.min(ev.clientY - offsetY, innerHeight - 40));
-      setDragPos({ left, top });
+      last = { left, top };
+      setDragPos(last);
     };
     const up = (ev: globalThis.PointerEvent) => {
       el.releasePointerCapture(ev.pointerId);
@@ -74,10 +76,8 @@ export function Window({
       el.removeEventListener('pointerup', up);
       // commit once on drop — this is the only point a drag touches shared
       // state (and so the only point it triggers a cookie write)
-      setDragPos((p) => {
-        if (p) wm.setPosition(id, p.left, p.top);
-        return null;
-      });
+      if (last) wm.setPosition(id, last.left, last.top);
+      setDragPos(null);
     };
     el.addEventListener('pointermove', move);
     el.addEventListener('pointerup', up);

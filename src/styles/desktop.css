@@ -3,6 +3,15 @@ body {
   height: 100%;
   margin: 0;
   overflow: hidden;
+  /* desktop chrome (icons, taskbar, start menu) is never text-selectable, like XP */
+  user-select: none;
+}
+
+/* window content stays selectable and copyable */
+.window-body,
+input,
+textarea {
+  user-select: text;
 }
 
 .desktop {
@@ -20,6 +29,7 @@ body {
   gap: 12px;
   padding: 12px;
   height: 100%;
+  touch-action: none; /* let touch drags drive the marquee instead of scrolling */
 }
 
 .icon {
@@ -40,6 +50,22 @@ body {
   box-shadow: none;
   font-size: 14px;
   cursor: pointer;
+}
+
+/* click-and-drag marquee on the desktop background */
+.selection-box {
+  position: fixed;
+  border: 1px dotted #fff; /* Win9x-style marching-ants marquee, minus the marching */
+  pointer-events: none;
+}
+
+/* XP selection look: tinted icon, highlighted label */
+.icon.selected .icon-img img {
+  filter: sepia(1) hue-rotate(180deg) saturate(3) opacity(0.7);
+}
+
+.icon.selected span:last-child {
+  background: #316ac5;
 }
 
 .icon-img {

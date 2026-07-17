@@ -15,6 +15,7 @@ type WindowManager = {
   setPosition: (id: string, left: number, top: number) => void;
   open: (id: string) => void;
   hide: (id: string) => void;
+  minimize: (id: string) => void;
   raise: (id: string) => void;
   taskbarClick: (id: string) => void;
 };
@@ -119,6 +120,13 @@ export function WindowManagerProvider({ children }: { children: ReactNode }) {
     setActiveId((a) => (a === id ? null : a));
   }, []);
 
+  // hidden+minimized: the window disappears but its taskbar button stays,
+  // and restoring keeps the dragged position (unlike hide/close)
+  const minimize = useCallback((id: string) => {
+    setWins((ws) => ws.map((w) => (w.id === id ? { ...w, hidden: true, minimized: true } : w)));
+    setActiveId((a) => (a === id ? null : a));
+  }, []);
+
   const taskbarClick = (id: string) => {
     const w = wins.find((x) => x.id === id);
     if (!w) return;
@@ -127,15 +135,16 @@ export function WindowManagerProvider({ children }: { children: ReactNode }) {
       setWins((ws) => ws.map((x) => (x.id === id ? { ...x, hidden: false, minimized: false, z: ++zRef.current } : x)));
       setActiveId(id);
     } else if (activeId === id) {
-      setWins((ws) => ws.map((x) => (x.id === id ? { ...x, hidden: true, minimized: true } : x)));
-      setActiveId(null);
+      minimize(id);
     } else {
       raise(id);
     }
   };
 
   return (
-    <Ctx.Provider value={{ wins, activeId, register, unregister, setMeta, setPosition, open, hide, raise, taskbarClick }}>
+    <Ctx.Provider
+      value={{ wins, activeId, register, unregister, setMeta, setPosition, open, hide, minimize, raise, taskbarClick }}
+    >
       {children}
     </Ctx.Provider>
   );

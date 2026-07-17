@@ -10,7 +10,9 @@ import {
   bioSave,
   getAdminData,
   linkDelete,
+  linkMove,
   linkSave,
+  linkSetVisible,
   login,
   logout,
   postDelete,
@@ -204,14 +206,32 @@ function IconsPanel({
           <thead>
             <tr>
               <th></th>
+              <th></th>
               <th style={{ textAlign: 'left' }}>Name</th>
               <th style={{ textAlign: 'left' }}>Link</th>
+              <th style={{ textAlign: 'left' }}>Visible</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
-            {links.map((l) => (
+            {links.map((l, i) => (
               <tr key={l.id}>
+                <td style={{ whiteSpace: 'nowrap' }}>
+                  <form
+                    action={async (fd) => {
+                      if (!guard(await linkMove(fd)).error) await onMutated();
+                    }}
+                    style={{ display: 'inline' }}
+                  >
+                    <input type="hidden" name="id" value={l.id} />
+                    <button name="dir" value="up" aria-label="Move up" disabled={i === 0}>
+                      ▲
+                    </button>
+                    <button name="dir" value="down" aria-label="Move down" disabled={i === links.length - 1}>
+                      ▼
+                    </button>
+                  </form>
+                </td>
                 <td>
                   <img
                     src={l.icon_filename ? `/uploads/${l.icon_filename}` : l.kind === 'window' ? '/icons/generic-text-document.png' : '/favicon.svg'}
@@ -223,6 +243,25 @@ function IconsPanel({
                 <td>{l.label}</td>
                 <td style={{ wordBreak: 'break-all' }}>
                   {l.url} {l.kind === 'window' && <em>(PDF viewer)</em>}
+                </td>
+                <td>
+                  <form
+                    className="visible-toggle"
+                    action={async (fd) => {
+                      if (!guard(await linkSetVisible(fd)).error) await onMutated();
+                    }}
+                  >
+                    <input type="hidden" name="id" value={l.id} />
+                    {/* xp.css renders the box via the label; submit on toggle */}
+                    <input
+                      type="checkbox"
+                      id={`visible-${l.id}`}
+                      name="visible"
+                      defaultChecked={!!l.visible}
+                      onChange={(e) => e.currentTarget.form!.requestSubmit()}
+                    />
+                    <label htmlFor={`visible-${l.id}`} aria-label="Visible"></label>
+                  </form>
                 </td>
                 <td style={{ whiteSpace: 'nowrap' }}>
                   <button onClick={() => setEditing(l)}>Edit</button>

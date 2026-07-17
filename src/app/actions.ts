@@ -84,12 +84,15 @@ export async function getAdminData() {
   jar.set('session', jar.get('session')!.value, sessionCookieOptions);
   return {
     user,
-    links: db.prepare('SELECT id, label, icon_filename, kind, url FROM links ORDER BY sort_order, id').all() as {
+    links: db
+      .prepare('SELECT id, label, icon_filename, kind, url, visible FROM links ORDER BY sort_order, id')
+      .all() as {
       id: number;
       label: string;
       icon_filename: string | null;
       kind: string;
       url: string;
+      visible: number;
     }[],
     posts: db
       .prepare('SELECT id, title, slug, status, published_at, updated_at FROM posts ORDER BY updated_at DESC')
@@ -117,6 +120,32 @@ export async function linkDelete(formData: FormData): Promise<{ error?: string }
   // ponytail: deleting/replacing an icon leaves its old file in uploads/ (harmless
   // orphans); sweep or delete-on-replace when a media manager exists
   db.prepare('DELETE FROM links WHERE id = ?').run(Number(formData.get('id')));
+  return {};
+}
+
+export async function linkMove(formData: FormData): Promise<{ error?: string }> {
+  if (!(await getUser())) return NOT_SIGNED_IN;
+  const id = Number(formData.get('id'));
+  const dir = formData.get('dir') === 'up' ? -1 : 1;
+  const ids = (db.prepare('SELECT id FROM links ORDER BY sort_order, id').all() as { id: number }[]).map((r) => r.id);
+  const i = ids.indexOf(id);
+  const j = i + dir;
+  if (i < 0 || j < 0 || j >= ids.length) return {};
+  [ids[i], ids[j]] = [ids[j], ids[i]];
+  // renumber the whole list: the table is tiny, and this heals legacy rows
+  // that all share the default sort_order 0 (where swapping two equal values
+  // would be a no-op)
+  const set = db.prepare('UPDATE links SET sort_order = ? WHERE id = ?');
+  db.transaction(() => ids.forEach((linkId, n) => set.run(n, linkId)))();
+  return {};
+}
+
+export async function linkSetVisible(formData: FormData): Promise<{ error?: string }> {
+  if (!(await getUser())) return NOT_SIGNED_IN;
+  db.prepare('UPDATE links SET visible = ? WHERE id = ?').run(
+    formData.get('visible') ? 1 : 0,
+    Number(formData.get('id'))
+  );
   return {};
 }
 
@@ -194,7 +223,10 @@ export async function linkSave(formData: FormData): Promise<{ error?: string }> 
       'UPDATE links SET label = ?, url = ?, kind = ?, window_type = ?, icon_filename = COALESCE(?, icon_filename) WHERE id = ?'
     ).run(label, finalUrl, kind, windowType, iconFilename, id);
   } else {
-    db.prepare('INSERT INTO links (label, url, kind, window_type, icon_filename) VALUES (?, ?, ?, ?, ?)').run(
+    // append at the end of the desktop order
+    db.prepare(
+      'INSERT INTO links (label, url, kind, window_type, icon_filename, sort_order) VALUES (?, ?, ?, ?, ?, (SELECT COALESCE(MAX(sort_order) + 1, 0) FROM links))'
+    ).run(
       label,
       finalUrl,
       kind,

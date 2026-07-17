@@ -389,6 +389,25 @@ dialog.window::backdrop {
   text-decoration: underline;
 }
 
+/* xp.css checkboxes assume a text label right of the box and anchor the box
+   (label::before), checkmark (::after), and focus outline to it. These are
+   label-less table-cell toggles, so give the empty label the box's own 13×13
+   footprint and draw everything at its origin. */
+.visible-toggle input[type='checkbox'] + label {
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  margin-left: 0;
+}
+
+.visible-toggle input[type='checkbox'] + label::before {
+  left: 0;
+}
+
+.visible-toggle input[type='checkbox']:checked + label::after {
+  left: 2px;
+}
+
 /* confirm dialog: alert icon beside the message, roomy body, wide buttons */
 .confirm-body {
   display: flex;

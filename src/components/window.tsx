@@ -102,6 +102,7 @@ export function Window({
       <div className="title-bar">
         <div className="title-bar-text">{title}</div>
         <div className="title-bar-controls">
+          <button aria-label="Minimize" onClick={() => wm.minimize(id)} />
           <button
             aria-label="Close"
             onClick={() => {

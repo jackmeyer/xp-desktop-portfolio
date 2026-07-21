@@ -25,7 +25,7 @@ run it, and you get a blank desktop that's yours to fill.
 You'll need [Docker](https://docs.docker.com/get-docker/) installed. Then:
 
 ```sh
-git clone <this-repo> && cd <this-repo>
+git clone https://github.com/jackmeyer/xp-desktop-portfolio.git && cd xp-desktop-portfolio
 
 # 1. Create your config file
 cp .env.example .env
@@ -39,18 +39,18 @@ docker compose up -d
 
 That's it — your desktop is at <http://localhost:4321>.
 
-It will be empty! That's expected. Head to the admin to add things.
+It will be empty! That's expected. Head to the admin panel to add things.
 
 ## Your first login
 
-1. Go to <http://localhost:4321> and double-click **Control Panel**
+1. Go to <http://localhost:4321> and open **Control Panel**
    (bottom-right corner of the desktop)
 2. Sign in with the `ADMIN_EMAIL` / `ADMIN_PASSWORD` from your `.env`
 
 The admin account is created automatically on first boot. After that, the
 `.env` credentials are never read again — you can even remove them.
 
-From the admin you can:
+From the Control panel you can configure:
 
 - **Desktop Icons** — add icons to the desktop. Give each a name and either a
   web link (opens in a new tab; the site's favicon is fetched automatically)
@@ -59,6 +59,11 @@ From the admin you can:
 - **Posts** — write blog posts in Markdown. Save as draft, preview, then
   publish. Published posts appear at `/posts` in a "Posts" window on the
   desktop.
+- **Users** - Add/remove "admin" accounts. Any accounts created here will be able to 
+login and access the Control Panel
+- **Bio** - Configure your site with your own name, photo, and bio! This is what 
+appears in the "Start" menu
+
 
 ## Running from source (development)
 

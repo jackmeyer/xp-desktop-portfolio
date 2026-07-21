@@ -4,7 +4,7 @@ import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import MarkdownIt from 'markdown-it';
 import { db } from '../lib/db';
-import { SITE_TITLE } from '../lib/site';
+import { SITE_TITLE, bioFontSize } from '../lib/site';
 import { WindowManagerProvider } from '../components/window-manager';
 import { PostsUIProvider } from '../components/posts-ui';
 import { IconGrid, type DesktopLink } from '../components/icon-grid';
@@ -40,7 +40,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   // start-menu bio; personal text/photo live in the settings table, never in code
   const settings = Object.fromEntries(
     (
-      db.prepare("SELECT key, value FROM settings WHERE key IN ('about', 'bio_name', 'bio_photo')").all() as {
+      db.prepare("SELECT key, value FROM settings WHERE key IN ('about', 'bio_name', 'bio_photo', 'bio_font_size')").all() as {
         key: string;
         value: string;
       }[]
@@ -64,6 +64,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               name={settings.bio_name || SITE_TITLE}
               photo={settings.bio_photo ? `/uploads/${settings.bio_photo}` : '/favicon.svg'}
               html={md.render(settings.about ?? '')}
+              fontSize={bioFontSize(settings.bio_font_size)}
             />
           </PostsUIProvider>
         </WindowManagerProvider>

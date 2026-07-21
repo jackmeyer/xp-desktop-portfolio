@@ -16,6 +16,7 @@ import {
   type User,
 } from '../lib/auth';
 import { sessionCookieOptions } from '../lib/session-cookie';
+import { bioFontSize } from '../lib/site';
 import { db } from '../lib/db';
 
 // The admin has no routes: these actions are its entire server surface, called
@@ -104,12 +105,12 @@ export async function getAdminData() {
     }[],
     bio: Object.fromEntries(
       (
-        db.prepare("SELECT key, value FROM settings WHERE key IN ('about', 'bio_name', 'bio_photo')").all() as {
+        db.prepare("SELECT key, value FROM settings WHERE key IN ('about', 'bio_name', 'bio_photo', 'bio_font_size')").all() as {
           key: string;
           value: string;
         }[]
       ).map((r) => [r.key, r.value])
-    ) as { about?: string; bio_name?: string; bio_photo?: string },
+    ) as { about?: string; bio_name?: string; bio_photo?: string; bio_font_size?: string },
   };
 }
 
@@ -352,6 +353,9 @@ export async function bioSave(formData: FormData): Promise<{ error?: string }> {
     upsert.run('bio_photo', saveUpload(await photo.arrayBuffer(), `${randomUUID()}.${ext}`));
   }
   upsert.run('bio_name', String(formData.get('bio_name') ?? '').trim());
-  upsert.run('about', String(formData.get('about') ?? ''));
+  // absent (editor still loading) is not the same as empty — never blank the bio
+  const about = formData.get('about');
+  if (about !== null) upsert.run('about', String(about));
+  upsert.run('bio_font_size', String(bioFontSize(String(formData.get('bio_font_size') ?? ''))));
   return {};
 }

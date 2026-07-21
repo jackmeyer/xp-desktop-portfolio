@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
+import { BIO_FONT_SIZE_MAX, BIO_FONT_SIZE_MIN, bioFontSize } from '../lib/site';
 import { Window } from './window';
 import { useWindowManager } from './window-manager';
 import { AdminTabs } from './admin-tabs';
@@ -27,6 +29,10 @@ import {
 type AdminData = NonNullable<Awaited<ReturnType<typeof getAdminData>>>;
 type Draft = NonNullable<Awaited<ReturnType<typeof postGetDraft>>>;
 type NewDraft = Partial<Draft>;
+
+// TipTap is ~200 KB and only signed-in admins ever see it; keep it out of the
+// bundle every desktop visitor downloads (AdminArea lives in the root layout)
+const MarkdownEditor = dynamic(() => import('./markdown-editor').then((m) => m.MarkdownEditor), { ssr: false });
 
 const ADMIN_ID = 'admin-window';
 const EDITOR_ID = 'editor-window';
@@ -485,6 +491,7 @@ function BioPanel({
   guard: Guard;
 }) {
   const [error, setError] = useState('');
+  const [fontSize, setFontSize] = useState(bioFontSize(bio.bio_font_size));
   return (
     <>
       <p>Shown in the Start menu on the desktop.</p>
@@ -506,9 +513,29 @@ function BioPanel({
           )}
           <input id="bio-photo" name="photo" type="file" accept="image/png,image/jpeg" />
         </div>
+        <div className="field-row">
+          <label htmlFor="bio-font-size">Text size</label>
+          <input
+            id="bio-font-size"
+            name="bio_font_size"
+            type="range"
+            min={BIO_FONT_SIZE_MIN}
+            max={BIO_FONT_SIZE_MAX}
+            value={fontSize}
+            onChange={(e) => setFontSize(Number(e.target.value))}
+          />
+          <span>{fontSize}px</span>
+        </div>
         <div className="field-row-stacked">
-          <label htmlFor="bio-about">Bio (Markdown)</label>
-          <textarea id="bio-about" name="about" rows={14} style={{ fontFamily: 'monospace' }} defaultValue={bio.about ?? ''} />
+          <label>Bio</label>
+          {/* the writing surface is the preview: same text size the Start menu
+              will use, so what you type is what the menu shows */}
+          <MarkdownEditor
+            name="about"
+            ariaLabel="Bio"
+            defaultValue={bio.about ?? ''}
+            contentStyle={{ fontSize, height: 300 }}
+          />
         </div>
         {error && <p role="alert">{error}</p>}
         <div className="field-row" style={{ justifyContent: 'flex-end' }}>

@@ -213,7 +213,9 @@ dialog.window::backdrop {
 .taskbar .start-button {
   height: 100%;
   margin: 0;
-  padding: 0 26px 0 16px;
+  /* padding trims back as the label grows, holding the button at ~107px
+     overall while keeping XP's off-centre label */
+  padding: 0 40px 0 25px;
   border: 0;
   border-radius: 0 12px 12px 0;
   background: linear-gradient(#63b45e, #3d8f3d 12%, #2f7d2f 55%, #266722);
@@ -221,9 +223,14 @@ dialog.window::backdrop {
     inset 0 1px 1px rgba(255, 255, 255, 0.5),
     inset -8px 0 8px -8px rgba(0, 0, 0, 0.6);
   color: #fff;
-  font-size: 18px;
+  /* XP set "start" in Franklin Gothic Medium Italic — present on Windows;
+     Arial Narrow is the closest stand-in bundled with macOS. Lowercasing in
+     CSS keeps the accessible name "Start" while matching the real button. */
+  font-family: 'Franklin Gothic Medium', 'Franklin Gothic', 'Arial Narrow', Arial, sans-serif;
+  font-size: 24px;
   font-style: italic;
   font-weight: bold;
+  text-transform: lowercase;
   text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);
   cursor: pointer;
 }
@@ -422,4 +429,136 @@ dialog.window::backdrop {
 
 dialog.window .field-row button {
   min-width: 72px;
+}
+
+/* --- Markdown WYSIWYG editor (TipTap) ---------------------------------
+   A period rich-text control: raised toolbar strip of flat icon buttons
+   with grooved separators, over a sunken white writing surface. */
+.md-editor {
+  border: 1px solid #7f9db9;
+  background: #fff;
+}
+
+.md-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  background: linear-gradient(#fff, #f1efe2 40%, #e6e3d3);
+  border-bottom: 1px solid #aca899;
+}
+
+.md-toolbar-group {
+  display: flex;
+  gap: 1px;
+}
+
+/* xp.css ships `.field-row-stacked *+*{margin-top:6px}` — a *descendant*
+   selector, so inside the admin's stacked field it pushed every button after
+   the first in each group down 6px, and the writing surface away from the
+   toolbar. Undo it for the chrome; inside the prose, revert to the browser's
+   own block margins so the editor spaces paragraphs like the Start menu. */
+.md-editor .md-toolbar * + *,
+.md-editor > .md-editor-content {
+  margin-top: 0;
+}
+
+.md-editor .ProseMirror * + * {
+  margin-top: revert;
+}
+
+/* the grooved separator between button groups */
+.md-toolbar-group + .md-toolbar-group {
+  margin-left: 3px;
+  padding-left: 4px;
+  border-left: 1px solid #aca899;
+  box-shadow: inset 1px 0 #fff;
+}
+
+/* every button is the same 24px square regardless of whether it holds a 16px
+   icon or a letterform, so the strip reads as one row of even cells */
+.md-toolbar button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 3px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: none;
+  box-shadow: none;
+  font-family: Arial, sans-serif;
+  font-size: 13px;
+  line-height: 1;
+  color: #1a1a1a;
+  cursor: pointer;
+}
+
+/* <b>/<i>/<s> already carry their own weight, slant and strike; the italic
+   just needs a serif to read as one at this size */
+.md-toolbar button i {
+  padding-right: 2px; /* the slant would otherwise sit off-centre */
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 14px;
+}
+
+.md-heading-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+
+.md-toolbar button:hover:not(:disabled) {
+  border-color: #c2a04d;
+  background: linear-gradient(#fff5cd, #ffdf94);
+}
+
+/* XP's "this format is on" state: the sunken amber highlight */
+.md-toolbar button[aria-pressed='true'] {
+  border-color: #c2a04d;
+  background: linear-gradient(#ffd88a, #ffe9b8);
+  box-shadow: inset 1px 1px 1px rgba(0, 0, 0, 0.2);
+}
+
+.md-toolbar button:disabled {
+  color: #aca899;
+  cursor: default;
+}
+
+.md-toolbar button:focus-visible {
+  outline: 1px dotted #000;
+}
+
+.md-editor-content {
+  overflow: auto;
+}
+
+.md-editor-content .ProseMirror {
+  min-height: 100%;
+  padding: 8px 10px;
+  outline: none;
+}
+
+/* xp.css sizes h1 at 5rem for real XP dialogs; rendered markdown (start-menu
+   bio and its editor alike) needs prose-scale headings instead */
+.md-editor-content h1,
+.start-menu-body h1 {
+  font-size: 1.8em;
+}
+
+.md-editor-content h2,
+.start-menu-body h2 {
+  font-size: 1.4em;
+}
+
+.md-editor-content h3,
+.start-menu-body h3 {
+  font-size: 1.2em;
+}
+
+.md-editor-content :first-child {
+  margin-top: 0;
 }

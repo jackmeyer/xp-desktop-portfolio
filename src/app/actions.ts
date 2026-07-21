@@ -269,7 +269,10 @@ export async function postSave(formData: FormData): Promise<{ id?: number; error
   let id = Number(formData.get('id')) || null;
   const title = String(formData.get('title') ?? '').trim();
   const summary = String(formData.get('summary') ?? '').trim();
-  const bodyMd = String(formData.get('body_md') ?? '');
+  // absent (editor still loading) is not the same as empty — never blank a body
+  const body = formData.get('body_md');
+  if (body === null) return { error: 'Editor is still loading. Try again.' };
+  const bodyMd = String(body);
   const slug = (String(formData.get('slug') ?? '').trim() || title)
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')

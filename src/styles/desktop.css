@@ -542,20 +542,23 @@ dialog.window .field-row button {
   outline: none;
 }
 
-/* xp.css sizes h1 at 5rem for real XP dialogs; rendered markdown (start-menu
-   bio and its editor alike) needs prose-scale headings instead */
+/* xp.css sizes h1 at 5rem for real XP dialogs; rendered markdown — start-menu
+   bio, post bodies, and the editors that preview both — needs prose scale */
 .md-editor-content h1,
-.start-menu-body h1 {
+.start-menu-body h1,
+.content-body h1 {
   font-size: 1.8em;
 }
 
 .md-editor-content h2,
-.start-menu-body h2 {
+.start-menu-body h2,
+.content-body h2 {
   font-size: 1.4em;
 }
 
 .md-editor-content h3,
-.start-menu-body h3 {
+.start-menu-body h3,
+.content-body h3 {
   font-size: 1.2em;
 }
 

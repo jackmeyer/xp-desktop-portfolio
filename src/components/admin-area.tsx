@@ -590,13 +590,12 @@ function EditorWindow({
             <input id="summary" name="summary" defaultValue={draft.summary ?? ''} />
           </div>
           <div className="field-row-stacked">
-            <label htmlFor="body_md">Body (Markdown, rendered on save)</label>
-            <textarea
-              id="body_md"
+            <label>Body</label>
+            <MarkdownEditor
               name="body_md"
-              rows={20}
-              style={{ fontFamily: 'monospace' }}
+              ariaLabel="Post body"
               defaultValue={draft.body_md ?? ''}
+              contentStyle={{ height: 400 }}
             />
           </div>
           {error && <p role="alert">{error}</p>}
@@ -606,12 +605,6 @@ function EditorWindow({
           </div>
         </form>
 
-        {draft.body_html && (
-          <fieldset style={{ marginTop: 12 }}>
-            <legend>Preview (as of last save)</legend>
-            <div style={{ background: '#fff', padding: 12 }} dangerouslySetInnerHTML={{ __html: draft.body_html }} />
-          </fieldset>
-        )}
       </div>
     </Window>
   );

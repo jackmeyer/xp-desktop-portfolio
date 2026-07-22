@@ -11,6 +11,8 @@ redeploys, no editing code to publish a post.
 **Everything personal lives in a database, not in this repository.** Clone it,
 run it, and you get a blank desktop that's yours to fill.
 
+<img width="2070" height="1288" alt="image" src="https://github.com/user-attachments/assets/e979a1d6-5318-44d8-bab4-cb53f1f3cfa1" />
+
 ## Features
 
 - 🪟 Windows XP look and feel ([XP.css](https://github.com/botoxparty/XP.css)) with draggable, resizable windows

@@ -561,8 +561,8 @@ function EditorWindow({
   return (
     <Window
       id={EDITOR_ID}
-      className="admin-window"
-      title={`${draft.title || 'Untitled'}.md — Notepad`}
+      className="admin-window editor-window"
+      title={`${draft.title || 'Untitled'}.html — Notepad`}
       ariaLabel="Post editor"
       icon="/icons/generic-text-document.png"
       style={{ width: 'min(900px, 95vw)' }}
@@ -589,14 +589,9 @@ function EditorWindow({
             <label htmlFor="summary">Summary</label>
             <input id="summary" name="summary" defaultValue={draft.summary ?? ''} />
           </div>
-          <div className="field-row-stacked">
+          <div className="field-row-stacked rte-fill">
             <label>Body</label>
-            <RichTextEditor
-              name="body_html"
-              ariaLabel="Post body"
-              defaultValue={draft.body_html ?? ''}
-              contentStyle={{ height: 400 }}
-            />
+            <RichTextEditor name="body_html" ariaLabel="Post body" defaultValue={draft.body_html ?? ''} />
           </div>
           {error && <p role="alert">{error}</p>}
           <div className="field-row" style={{ justifyContent: 'space-between' }}>

@@ -435,6 +435,8 @@ dialog.window .field-row button {
    A period rich-text control: raised toolbar strip of flat icon buttons
    with grooved separators, over a sunken white writing surface. */
 .rte-editor {
+  display: flex;
+  flex-direction: column;
   border: 1px solid #7f9db9;
   background: #fff;
 }
@@ -566,6 +568,30 @@ dialog.window .field-row button {
   margin-top: 0;
 }
 
+/* The post editor fills its window: height has to be handed down every step
+   from the window body to the writing surface, and min-height:0 lets each
+   flex child actually shrink instead of bottoming out at its content. */
+.editor-window {
+  height: min(80vh, 800px);
+}
+
+.editor-window .window-body,
+.editor-window .window-body > form,
+.editor-window .rte-fill,
+.editor-window .rte-editor,
+.editor-window .rte-editor-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+/* the writing surface scrolls; the fields above it keep their natural size */
+.editor-window .rte-editor-content {
+  display: block;
+  overflow: auto;
+}
+
 /* TipTap wraps list item content in <p>; without this a re-saved list gains
    paragraph margins and goes loose */
 .rte-editor-content li > p,
@@ -582,7 +608,33 @@ dialog.window .field-row button {
   height: auto;
 }
 
-/* ProseMirror marks the selected image node; show it the XP way */
-.rte-editor-content img.ProseMirror-selectednode {
+/* the resize grip rides on the image's corner, and only shows itself when the
+   image is hovered or selected so it stays out of the way while writing */
+.rte-image {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+}
+
+.rte-image-handle {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  width: 11px;
+  height: 11px;
+  border: 1px solid #fff;
+  border-radius: 2px;
+  background: #316ac5;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+  cursor: nwse-resize;
+  opacity: 0;
+}
+
+.rte-image:hover .rte-image-handle,
+.rte-image.ProseMirror-selectednode .rte-image-handle {
+  opacity: 1;
+}
+
+.rte-image.ProseMirror-selectednode img {
   outline: 2px solid #316ac5;
 }

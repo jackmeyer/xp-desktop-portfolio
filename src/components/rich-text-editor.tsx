@@ -13,6 +13,8 @@ import { imageUpload } from '../app/actions';
 
 // Images carry their display width, which is the whole reason for storing HTML
 // rather than Markdown — Markdown has no syntax for it.
+const MIN_IMAGE_WIDTH = 40;
+
 const SizedImage = Image.extend({
   addAttributes() {
     return {
@@ -22,6 +24,64 @@ const SizedImage = Image.extend({
         parseHTML: (el) => el.getAttribute('width'),
         renderHTML: (attrs) => (attrs.width ? { width: attrs.width } : {}),
       },
+    };
+  },
+
+  // A node view purely to hang a resize grip off the corner. The width is
+  // updated live on the <img> while dragging (cheap, no transactions) and
+  // committed to the document once on release, so a drag is a single undo step.
+  addNodeView() {
+    return ({ node, editor, getPos }) => {
+      const dom = document.createElement('span');
+      dom.className = 'rte-image';
+      const img = document.createElement('img');
+      const handle = document.createElement('span');
+      handle.className = 'rte-image-handle';
+      handle.title = 'Drag to resize';
+      dom.append(img, handle);
+
+      let current = node;
+      const paint = (n: typeof node) => {
+        img.src = n.attrs.src;
+        img.alt = n.attrs.alt ?? '';
+        if (n.attrs.width) img.setAttribute('width', String(n.attrs.width));
+        else img.removeAttribute('width');
+      };
+      paint(node);
+
+      handle.addEventListener('pointerdown', (event) => {
+        event.preventDefault(); // don't start a node drag or move the selection
+        event.stopPropagation();
+        const startX = event.clientX;
+        const startWidth = img.getBoundingClientRect().width;
+        // never let an image be dragged wider than the column it sits in
+        const max = dom.parentElement?.getBoundingClientRect().width ?? Infinity;
+        const widthAt = (e: PointerEvent) =>
+          Math.round(Math.min(max, Math.max(MIN_IMAGE_WIDTH, startWidth + e.clientX - startX)));
+        const onMove = (e: PointerEvent) => img.setAttribute('width', String(widthAt(e)));
+        const onUp = (e: PointerEvent) => {
+          handle.removeEventListener('pointermove', onMove);
+          handle.removeEventListener('pointerup', onUp);
+          const pos = getPos();
+          if (typeof pos !== 'number') return;
+          editor.view.dispatch(
+            editor.view.state.tr.setNodeMarkup(pos, undefined, { ...current.attrs, width: widthAt(e) })
+          );
+        };
+        handle.setPointerCapture(event.pointerId); // keep tracking outside the grip
+        handle.addEventListener('pointermove', onMove);
+        handle.addEventListener('pointerup', onUp);
+      });
+
+      return {
+        dom,
+        update: (updated) => {
+          if (updated.type.name !== node.type.name) return false;
+          current = updated;
+          paint(updated); // keeps the toolbar presets in sync with the grip
+          return true;
+        },
+      };
     };
   },
 });

@@ -17,7 +17,7 @@ run it, and you get a blank desktop that's yours to fill.
 
 - 🪟 Windows XP look and feel ([XP.css](https://github.com/botoxparty/XP.css)) with draggable, resizable windows
 - 🔗 Desktop icons managed from the admin — external links (with favicon auto-fetch) or PDFs in a built-in viewer
-- 📝 A Markdown blog ("Posts") with drafts, publishing, and clean URLs that update without page reloads
+- 📝 A blog ("Posts") with a what-you-see-is-what-you-get editor, image uploads, drafts, publishing, and clean URLs that update without page reloads
 - 🔍 Every page is real server-rendered HTML — search engines and link previews just work
 - 🔒 Simple, secure admin login (argon2 password hashing, rate limiting, session cookies)
 - 📦 One Docker container, one data folder to back up
@@ -47,10 +47,11 @@ It will be empty! That's expected. Head to the admin panel to add things.
 
 1. Go to <http://localhost:4321> and open **Control Panel**
    (bottom-right corner of the desktop)
-2. Sign in with the `ADMIN_EMAIL` / `ADMIN_PASSWORD` from your `.env`
+2. Sign in with the `ADMIN_EMAIL` / `ADMIN_PASSWORD` you started the container
+   with (on the command line or in `.env`)
 
-The admin account is created automatically on first boot. After that, the
-`.env` credentials are never read again — you can even remove them.
+The admin account is created automatically on first boot. After that, those
+credentials are never read again — you can even remove them.
 
 From the Control panel you can configure:
 
@@ -58,13 +59,16 @@ From the Control panel you can configure:
   web link (opens in a new tab; the site's favicon is fetched automatically)
   or an uploaded PDF (opens in the built-in viewer — great for a resume). You
   can upload your own `.png` icon, or let the favicon do the work.
-- **Posts** — write blog posts in Markdown. Save as draft, preview, then
-  publish. Published posts appear at `/posts` in a "Posts" window on the
-  desktop.
-- **Users** - Add/remove "admin" accounts. Any accounts created here will be able to 
-login and access the Control Panel
-- **Bio** - Configure your site with your own name, photo, and bio! This is what 
-appears in the "Start" menu
+- **Posts** — write blog posts in a formatting-toolbar editor: headings, lists,
+  quotes, code blocks, links, and images you can upload, paste, or drag in and
+  resize. What you type is what the post looks like, and an HTML button drops
+  you into the raw source when you want to hand-write an embed. Save as a
+  draft, then publish — published posts appear at `/posts` in a "Posts" window
+  on the desktop.
+- **Users** — add and remove admin accounts. Any account created here can log
+  in and access the Control Panel.
+- **Bio** — configure your site with your own name, photo, and bio. This is
+  what appears in the "Start" menu.
 
 
 ## Running from source (development)
@@ -100,7 +104,6 @@ the `docker compose up` command line, or put them in a `.env` next to
 | `PUID` / `PGID` | User and group the container runs as — must own `DATA_PATH`, or SQLite can't create its database. Default `1000`. On UnRAID use `99` / `100`. |
 | `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Your admin login, seeded on first boot only. (To reset it, delete the database and boot fresh.) |
 | `PUBLIC_SITE_TITLE` | The site name shown in the browser tab and window chrome (e.g. `yourdomain.com`). |
-| `PUBLIC_SITE_URL` | Your site's public URL, used for links and previews. |
 | `DATA_DIR` | Where the database and uploads live. Leave unset: local runs use `./data`, Docker uses `/data`. |
 
 ## Where your stuff lives

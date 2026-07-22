@@ -25,19 +25,19 @@ run it, and you get a blank desktop that's yours to fill.
 You'll need [Docker](https://docs.docker.com/get-docker/) installed. Then:
 
 ```sh
-git clone https://github.com/jackmeyer/xp-desktop-portfolio.git && cd xp-desktop-portfolio
+curl -O https://raw.githubusercontent.com/jackmeyer/xp-desktop-portfolio/main/compose.yaml
 
-# 1. Create your config file
-cp .env.example .env
-
-# 2. Open .env and set ADMIN_EMAIL and ADMIN_PASSWORD
-#    (these become your admin login on first boot)
-
-# 3. Build and run
-docker compose up -d
+# ADMIN_EMAIL / ADMIN_PASSWORD become your admin login on first boot
+ADMIN_EMAIL=you@example.com ADMIN_PASSWORD=pick-a-good-one docker compose up -d
 ```
 
-That's it — your desktop is at <http://localhost:4321>.
+That's it — your desktop is at <http://localhost:4321>. No repository checkout
+and no config file: `compose.yaml` pulls the prebuilt image and every setting
+has a working default.
+
+Prefer a file over shell variables? Put those same names in a `.env` next to
+`compose.yaml` and run `docker compose up -d` — Compose reads it automatically.
+To build from source instead, clone the repo and swap `image:` for `build: .`.
 
 It will be empty! That's expected. Head to the admin panel to add things.
 

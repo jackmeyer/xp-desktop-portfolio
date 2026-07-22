@@ -1,12 +1,28 @@
-# Example stack for any homelab. On UnRAID, point the volume at
+# Example stack for any homelab. On UnRAID, point DATA_PATH at
 # /mnt/user/appdata/portfolio/data and join your reverse-proxy network.
+#
+# Every setting below is an environment variable with a working default, so
+# this file runs as-is and never needs editing. Override per-deployment by
+# exporting the variable, or by putting it in a .env file next to this file:
+#
+#   ADMIN_EMAIL=me@example.com ADMIN_PASSWORD=… docker compose up -d
+#
+# To build from a checkout instead of pulling, swap `image:` for `build: .`.
+name: xp-desktop-portfolio
 services:
   portfolio:
-    # or point at a published image, e.g. ghcr.io/<you>/xp-desktop-portfolio:latest
-    build: .
+    image: ghcr.io/jackmeyer/xp-desktop-portfolio:latest
     restart: unless-stopped
     ports:
-      - '4321:4321'
+      - '${PORT:-4321}:4321'
     volumes:
-      - ./data:/data
-    env_file: .env
+      - '${DATA_PATH:-./data}:/data'
+    environment:
+      # Site name in page titles and window chrome.
+      PUBLIC_SITE_TITLE: '${PUBLIC_SITE_TITLE:-My Desktop}'
+      # First-boot admin bootstrap: read only while the users table is empty,
+      # so leaving these unset after the first login is the expected end state.
+      ADMIN_EMAIL: '${ADMIN_EMAIL:-}'
+      ADMIN_PASSWORD: '${ADMIN_PASSWORD:-}'
+      # DATA_DIR is baked into the image as /data; override the host side with
+      # DATA_PATH above, not this.

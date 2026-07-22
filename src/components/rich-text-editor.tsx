@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react';
-import { EditorContent, useEditor, type Editor } from '@tiptap/react';
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { EditorContent, Node, useEditor, type Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import TextAlign from '@tiptap/extension-text-align';
@@ -85,6 +85,61 @@ const SizedImage = Image.extend({
     };
   },
 });
+
+// The document schema drops any tag it doesn't know, so an <iframe> typed into
+// the HTML view would vanish the moment you switched back. This keeps it as an
+// opaque block — the editor never edits inside one, it just carries it through.
+const Iframe = Node.create({
+  name: 'iframe',
+  group: 'block',
+  atom: true,
+  draggable: true,
+  addAttributes: () =>
+    Object.fromEntries(
+      ['src', 'width', 'height', 'title', 'loading', 'allow', 'allowfullscreen', 'frameborder'].map((a) => [
+        a,
+        { default: null },
+      ])
+    ),
+  parseHTML: () => [{ tag: 'iframe' }],
+  renderHTML: ({ HTMLAttributes }) => ['iframe', HTMLAttributes],
+});
+
+// Pretty-printing for the HTML view. TipTap emits one unbroken line, which is
+// unreadable past a paragraph or two. The rule: break between block elements,
+// never inside one. A newline between two inline elements parses back as a
+// space, so reformatting there would quietly edit the prose — a paragraph
+// stays on its one long line and the textarea soft-wraps it.
+const BLOCK =
+  /^(p|h[1-6]|ul|ol|li|blockquote|pre|hr|div|figure|figcaption|iframe|table|thead|tbody|tr|td|th)$/;
+
+const isBlock = (n: ChildNode): n is Element => n.nodeType === 1 && BLOCK.test((n as Element).localName);
+
+// Only split a node's children when *all* of them are blocks; a mixed bag means
+// the whitespace between them is load-bearing, so that node is left as one line.
+const splittable = (el: Element): boolean => {
+  const kids = [...el.childNodes].filter((n) => n.nodeType !== 3 || n.textContent?.trim());
+  return kids.length > 0 && kids.every(isBlock);
+};
+
+const openTag = (el: Element) =>
+  `<${el.localName}${[...el.attributes]
+    .map((a) => ` ${a.name}="${a.value.replace(/"/g, '&quot;')}"`)
+    .join('')}>`;
+
+const indent = (el: Element, depth: number): string[] =>
+  [...el.children].flatMap((c) => {
+    const pad = '  '.repeat(depth);
+    return splittable(c)
+      ? [pad + openTag(c), ...indent(c, depth + 1), `${pad}</${c.localName}>`]
+      : [pad + c.outerHTML];
+  });
+
+const prettyHtml = (html: string): string => {
+  const host = document.createElement('div');
+  host.innerHTML = html;
+  return splittable(host) ? indent(host, 0).join('\n') : html;
+};
 
 const IMAGE_SIZES: [string, number | null][] = [
   ['Small', 240],
@@ -341,6 +396,10 @@ export function RichTextEditor({
 }) {
   const fileInput = useRef<HTMLInputElement>(null);
   const boxRef = useRef<HTMLDivElement>(null);
+  // null = WYSIWYG; a string = the HTML source view, which is then the thing
+  // being edited and the thing that gets submitted. Switching back re-parses it
+  // through the schema, so anything the schema can't hold is normalised away.
+  const [source, setSource] = useState<string | null>(null);
   // the native listeners below are bound once; a ref keeps them on the live editor
   const editorRef = useRef<Editor | null>(null);
 
@@ -363,6 +422,7 @@ export function RichTextEditor({
     extensions: [
       StarterKit.configure({ link: { openOnClick: false } }),
       SizedImage.configure({ inline: true }),
+      Iframe,
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
     ],
     content: defaultValue, // stored HTML, parsed straight into the document
@@ -422,7 +482,23 @@ export function RichTextEditor({
   return (
     <div className="rte-editor" ref={boxRef}>
       <div className="rte-toolbar" role="toolbar" aria-label={`${ariaLabel} formatting`}>
-        {GROUPS.map((group, gi) => (
+        <div className="rte-toolbar-group">
+          <button
+            type="button"
+            title={source === null ? 'Edit HTML source' : 'Back to the editor'}
+            aria-pressed={source !== null}
+            onMouseDown={(ev) => {
+              ev.preventDefault();
+              if (source === null) return setSource(prettyHtml(editor.getHTML()));
+              editor.commands.setContent(source);
+              setSource(null);
+            }}
+          >
+            <span className="rte-heading-label">HTML</span>
+          </button>
+        </div>
+        {source === null &&
+          GROUPS.map((group, gi) => (
           <div key={gi} className="rte-toolbar-group">
             {group.map((b, bi) => (
               <button
@@ -445,7 +521,7 @@ export function RichTextEditor({
         ))}
         {/* only meaningful with an image selected, so it stays out of the way
             until there is one rather than sitting permanently disabled */}
-        {imageSelected && (
+        {source === null && imageSelected && (
           <div className="rte-toolbar-group">
             {IMAGE_SIZES.map(([label, width]) => (
               <button
@@ -464,7 +540,17 @@ export function RichTextEditor({
           </div>
         )}
       </div>
-      <EditorContent editor={editor} className="rte-editor-content" style={contentStyle} />
+      {source === null ? (
+        <EditorContent editor={editor} className="rte-editor-content" style={contentStyle} />
+      ) : (
+        <textarea
+          className="rte-editor-content rte-source"
+          style={contentStyle}
+          aria-label={`${ariaLabel} HTML source`}
+          value={source}
+          onChange={(e) => setSource(e.target.value)}
+        />
+      )}
       <input
         ref={fileInput}
         type="file"
@@ -476,7 +562,9 @@ export function RichTextEditor({
           if (file) insertImages([file]);
         }}
       />
-      <input type="hidden" name={name} value={editor.getHTML()} />
+      {/* saving straight from the source view submits exactly what's typed,
+          without a round trip through the schema */}
+      <input type="hidden" name={name} value={source ?? editor.getHTML()} />
     </div>
   );
 }

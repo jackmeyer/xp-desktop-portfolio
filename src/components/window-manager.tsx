@@ -42,8 +42,17 @@ export function WindowManagerProvider({ children }: { children: ReactNode }) {
     setWins((ws) => {
       const existing = ws.find((x) => x.id === id);
       // an entry may already exist from a previous route: revive it in place
-      // so its taskbar-strip position and restored state are kept
-      if (existing) return ws.map((x) => (x.id === id ? { ...x, ...meta } : x));
+      // so its taskbar-strip position and restored state are kept — unless the
+      // caller is authoritative, in which case its defaultHidden is the truth.
+      // (The post editor re-mounts on every draft switch, and unmount cleanup
+      // always marks the entry hidden: without this the entry it re-registers
+      // into is one unregister() just closed, and the window never appears.)
+      if (existing)
+        return ws.map((x) =>
+          x.id === id
+            ? { ...x, ...meta, ...(authoritative && !defaultHidden ? { hidden: false, minimized: false, z: ++zRef.current } : {}) }
+            : x
+        );
       const saved = persisted.current?.windows[id];
       // `authoritative` means the caller's defaultHidden reflects a specific,
       // deliberate intent (e.g. an SSR route for a shared /posts/<slug> link)

@@ -2,7 +2,7 @@
 # /mnt/user/appdata/portfolio/data and join your reverse-proxy network.
 services:
   portfolio:
-    # or point at a published image, e.g. ghcr.io/<you>/portfolio:latest
+    # or point at a published image, e.g. ghcr.io/<you>/xp-desktop-portfolio:latest
     build: .
     restart: unless-stopped
     ports:

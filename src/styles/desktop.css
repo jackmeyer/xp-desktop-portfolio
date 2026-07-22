@@ -608,6 +608,30 @@ dialog.window .field-row button {
   height: auto;
 }
 
+/* the HTML source view: same box as the writing surface, plain monospace */
+textarea.rte-source {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  resize: none;
+  font-family: Consolas, 'Courier New', monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+/* embeds are inert while editing, so a click selects the block instead of
+   landing inside someone else's player */
+.rte-editor-content iframe {
+  max-width: 100%;
+  pointer-events: none;
+}
+
+.rte-editor-content iframe.ProseMirror-selectednode {
+  outline: 2px solid #316ac5;
+}
+
 /* the resize grip rides on the image's corner, and only shows itself when the
    image is hovered or selected so it stays out of the way while writing */
 .rte-image {

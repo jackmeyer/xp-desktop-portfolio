@@ -565,6 +565,9 @@ function EditorWindow({
       title={`${draft.title || 'Untitled'}.html — Notepad`}
       ariaLabel="Post editor"
       icon="/icons/generic-text-document.png"
+      // this window only exists while a draft is loaded, so mounting *is* the
+      // intent to open it: neither the cookie nor a stale entry gets a vote
+      authoritative
       style={{ width: 'min(900px, 95vw)' }}
     >
       <div className="window-body" style={{ overflow: 'auto' }}>

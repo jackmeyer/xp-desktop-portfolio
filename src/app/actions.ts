@@ -268,13 +268,17 @@ const clean = (html: string): string =>
     allowedTags: [
       'p', 'br', 'strong', 'em', 's', 'u', 'code', 'pre',
       'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-      'ul', 'ol', 'li', 'blockquote', 'hr', 'a', 'img',
+      'ul', 'ol', 'li', 'blockquote', 'hr', 'a', 'img', 'iframe',
     ],
     allowedAttributes: {
       a: ['href', 'target', 'rel'],
       img: ['src', 'alt', 'title', 'width'],
+      // embeds are hand-written in the editor's HTML view; https only, and no
+      // sandbox-escaping attributes beyond what a player needs
+      iframe: ['src', 'width', 'height', 'title', 'loading', 'allow', 'allowfullscreen', 'frameborder'],
       '*': ['style'],
     },
+    allowedSchemesByTag: { iframe: ['https'] },
     allowedStyles: { '*': { 'text-align': [/^(left|right|center|justify)$/] } },
     // relative /uploads/… srcs stay allowed; javascript: and data: do not
     allowedSchemes: ['http', 'https', 'mailto'],
